@@ -5,7 +5,7 @@ GCN_ADV_Train/data
 GCN_ADV_Train/results
 GCN_ADV_Train/now_s_saves
 GCN_ADV_Train/label_cora.npy
-GCN_ADV_Train/run**.sh
+GCN_ADV_Train/run*.sh
 GCN_ADV_Train/rob_cora
 GCN_ADV_Train/bitcoin_data
 
