@@ -1,5 +1,8 @@
-# Implementation of Baseline Models in Value at Adversarial Risk: A Graph Defense Strategy Against Cost-Aware 
-This is the pytorch implementation of baselines and also Meta Attack in Value at Adversarial Risk: A Graph Defense Strategy Against Cost-Aware. This repo is developed on top of DeepRobust repo (https://github.com/DSE-MSU/DeepRobust) with source code modified.
+# Implementation of Baseline Models in Value at Adversarial Risk: A Graph Defense Strategy Against Cost-Aware Attacks
+
+## About
+This is the pytorch implementation of baselines and also Meta Attack in Value at Adversarial Risk: A Graph Defense Strategy Against Cost-Aware. This repo is developed on top of [DeepRobust](https://github.com/DSE-MSU/DeepRobust) repo with source code modified.
+
 ## Environment
 To build env, run:
 ```
