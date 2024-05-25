@@ -4,7 +4,7 @@
 This repo is the official code for AAAI24:["Value at Adversarial Risk: A Graph Defense Strategy against Cost-Aware Attacks"](https://ojs.aaai.org/index.php/AAAI/article/view/29282)
 
 ## Dependencies
-The Riskeeper Model and other baselines are implemented with Tensorflow and PyTorch respectively. They would require seperate environments. For dependencies of each environment, see README in subdirectories [GCN_ADV_Train/](GCN_ADV_Train/README.md) and [Baselines/](GCN_ADV_Train/README.md). 
+The Riskeeper Model and other baselines are implemented with Tensorflow and PyTorch respectively. They would require seperate environments. For dependencies of each environment, see README in subdirectories [GCN_ADV_Train/](GCN_ADV_Train/README.md) and [Baselines/](Baselines/README.md). 
 
 For building environment of RisKeeper's adversarial training, run:
 ```
