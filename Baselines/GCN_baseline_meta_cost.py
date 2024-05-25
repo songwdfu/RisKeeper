@@ -9,7 +9,7 @@ from sklearn.metrics import roc_auc_score
 from torch_geometric.data import Data, DataLoader
 from DeepRobust.deeprobust.graph.global_attack.topology_attack_for_cost_scheme import PGDAttack, MinMax
 from DeepRobust.deeprobust.graph.global_attack.mettack_cost import Metattack
-from deeprobust.graph.data import Dataset
+from DeepRobust.deeprobust.graph.data import Dataset
 from DeepRobust.deeprobust.graph.utils import *
 import torch.nn.functional as F
 import pandas as pd

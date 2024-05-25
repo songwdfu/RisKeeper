@@ -4,7 +4,13 @@
 This is the pytorch implementation of baselines and also Meta Attack in Value at Adversarial Risk: A Graph Defense Strategy Against Cost-Aware. This repo is developed on top of [DeepRobust](https://github.com/DSE-MSU/DeepRobust) repo with source code modified.
 
 ## Environment
-To build env, run:
+To build env, first install PyTorch
+```
+pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
+pip install setuptools==68.0.0
+pip install torch-scatter==2.0.9 torch-sparse==0.6.12 torch-geometric==2.2.0 -f https://data.pyg.org/whl/torch-1.9.0+cu111.html
+```
+Then run:
 ```
 $ cd Baselines/
 $ pip install -r requirements.txt
