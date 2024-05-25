@@ -8,14 +8,19 @@ The Riskeeper Model and other baselines are implemented with Tensorflow and PyTo
 
 For building environment of RisKeeper's adversarial training, run:
 ```
-cd GCN_ADV_Train/
-pip install -r requirements.txt
+$ cd GCN_ADV_Train/
+$ pip install -r requirements.txt
 ```
 
-For building environment of baselines models, run:
+For building environment of baselines models, follow the instructions in [`README.md`](Baselines/README.md) file in `Baselines/` subdirectory.
 ```
-cd Baselines/
-pip install -r requirements.txt
+$ cd Baselines/
+$ pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
+$ pip install setuptools==68.0.0
+$ pip install torch-scatter==2.0.9 torch-sparse==0.6.12 torch-geometric==2.2.0 -f https://data.pyg.org/whl/torch-1.9.0+cu111.html
+$ pip install -r requirements.txt
+$ cd DeepRobust/
+$ python setup.py install
 ```
 
 In addition, cuda 12.0 and python 3.8 was used in our project. 

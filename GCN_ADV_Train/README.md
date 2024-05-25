@@ -62,3 +62,13 @@ $ bash run_meta_pre.sh
 ```
 
 Then head to `../Baselines/` and read the [`README.md`](../Baselines/README.md) file for instructions.
+
+## Note
+If encountering issue with tensorrt, please try reinstalling tensorrt by uninstalling current version through `pip`, and run:
+```
+python3 -m pip install tensorrt
+``` 
+A successful installation will have split packages `tensorrt-bindings` and `tensorrt-libs` installed as well. You can also check with:
+```
+python3 -c "import tensorrt; print(tensorrt.__path__)"
+```
