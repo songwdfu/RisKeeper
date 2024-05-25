@@ -23,7 +23,7 @@ $ cd DeepRobust/
 $ python setup.py install
 ```
 
-In addition, cuda 12.0 and python 3.8 was used in our project. 
+In addition, `cuda 12.0` and `python 3.8` was used in our project. 
 
 ## File Folders
 `GCN_ADV_Train/`: contains training, testing and model file for the adversarial training of RisKeeper and the surrogate model.
