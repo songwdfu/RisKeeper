@@ -12,7 +12,7 @@ $ pip install -r requirements.txt
 
 ## Training and Testing
 ### Data
-The preprocessed data is available through [this link](https://drive.google.com/file/d/1lQtfUuvtO3zglQtwlL_gWcMtqNO5cUVp/view?usp=sharing), on a linux machine, put it in `GCN_ADV_Train/` directory, and unzip it with:
+The preprocessed data is available through [this link](https://drive.google.com/file/d/1lQtfUuvtO3zglQtwlL_gWcMtqNO5cUVp/view?usp=sharing), on a linux machine, put it in `Baselines/` directory, and unzip it with:
 ```
 $ tar -xzvf riskeeper_data.tar.gz
 ```
@@ -35,7 +35,7 @@ $ python GCN_baseline_pgd_cost.py --dataset cora --attack PGDCost --perturb_rati
 ### Transfering to Meta Attack
 See `GCN_baseline_meta_cost.py` for transfering to cost-aware Meta Attack.
 
-For running current Meta experiments, first go to `../GCN_ADV_Train/` and run `bash run_meta_pre.sh` to obtain the costs, then run:
+For running current Meta experiments, first go to [`../GCN_ADV_Train/`](../GCN_ADV_Train/README.md) and run `bash run_meta_pre.sh` to obtain the costs, then run:
 ```
 $ cd Baselines/
 $ bash run_baselines_meta.sh <device>

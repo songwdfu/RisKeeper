@@ -15,7 +15,7 @@ If code fails to run, make sure scipy and numpy are compatible as given in `requ
 
 ## Training and Testing 
 ### Data
-The preprocessed data is available through [this link](https://drive.google.com/file/d/1lQtfUuvtO3zglQtwlL_gWcMtqNO5cUVp/view?usp=sharing), on a linux machine, put it in `Baselines/` directory, and unzip it with:
+The preprocessed data is available through [this link](https://drive.google.com/file/d/1lQtfUuvtO3zglQtwlL_gWcMtqNO5cUVp/view?usp=sharing), on a linux machine, put it in `GCN_ADV_Train/` directory, and unzip it with:
 ```
 $ tar -xzvf riskeeper_data.tar.gz
 ```
@@ -53,7 +53,7 @@ The implementation of the Cost-Aware PGD attack is in `PGD_attack_cost_constrain
 By the end of the adversarial training, `now_s` and `now_node_costs` are final attack perturbation vector and final learned costs respectively. `atk_accs` and `atk_aucs` records surrogate performance on clean graph first, and then defense performance in each epochs. The saved node costs are used to perform case study of cost distributions and baseline evaluations in `../Baselines/`, where sum of node costs are needed to ensure fairness of comparisons.
 
 ## Baselines & Transferring to Meta Attack
-The baseline models `GCN, GCNJaccard, GCNSVD, MedianGCN` are implemented with pytorch under `../Baselines/` utilizing `DeepRobust` repo, see `../Baselines/README.md` for details. Notice that the source codes are highly modified on top of the original repo. 
+The baseline models `GCN, GCNJaccard, GCNSVD, MedianGCN` are implemented with pytorch under `../Baselines/` utilizing `DeepRobust` repo, see [`../Baselines/README.md`](../Baselines/README.md) for details. Notice that the source codes are highly modified on top of the original repo. 
 
 For running experiments for transfering onto Meta attack, please first run:
 ```
@@ -61,4 +61,4 @@ $ cd GCN_ADV_Train/
 $ bash run_meta_pre.sh
 ```
 
-Then head to `../Baselines/` and read the readme file for instructions.
+Then head to `../Baselines/` and read the [`README.md`](../Baselines/README.md) file for instructions.
