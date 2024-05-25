@@ -18,7 +18,7 @@ cd Baselines/
 pip install -r requirements.txt
 ```
 
-In addition, cuda 12.0 was used in our projecct. 
+In addition, cuda 12.0 and python 3.8 was used in our project. 
 
 ## File Folders
 `GCN_ADV_Train/`: contains training, testing and model file for the adversarial training of RisKeeper and the surrogate model.
