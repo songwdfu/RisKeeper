@@ -1,1 +1,1 @@
-export LD_LIBRARY_PATH=/data/wenda/anaconda3/envs/GCN_ADV_/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=GCN_ADV_/lib:$LD_LIBRARY_PATH

@@ -238,12 +238,7 @@ class GCN(Model):
             self.outputs2=tf.sigmoid(self.outputs2)                 # sigmoid activation -> close to 0 or 1?
             self.outputs2 = (self.outputs2-tf.reduce_min(self.outputs2))/(tf.reduce_max(self.outputs2)-tf.reduce_min(self.outputs2))    # min-max scaling, output learned cost allocation
             
-            # self.outputs2 = tf.nn.relu(self.outputs2)
-            # self.relu_out = self.outputs2
             
-            # 改成normalize
-
-            # self.outputs2 *= 100
             
             # Store model variables for easy access
             edge_cost=self.outputs2+tf.transpose(self.outputs2)
@@ -265,7 +260,6 @@ class GCN(Model):
 
                 self.optimizer2 = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate) # added another optimizer
                 self.opt_op2 = self.optimizer2.minimize(self.loss2, var_list=self.variables[2:])     # optimize defence (cost allocation)
-                # self.opt_op2 = self.optimizer.minimize(self.loss2, var_list=self.variables[2:])     # optimize defence (cost allocation)
                 
                 # attack update
                 self.Sgrad = tf.gradients(self.loss2_no_train, self.upper_S_real[0])

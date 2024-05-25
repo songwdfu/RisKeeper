@@ -2,10 +2,11 @@
 GCN_ADV_Train/.idea
 GCN_ADV_Train/.vscode
 GCN_ADV_Train/data
+GCN_ADV_Train/riskeeper_data.tar.gz
 GCN_ADV_Train/results
 GCN_ADV_Train/now_s_saves
+GCN_ADV_Train/node_costs
 GCN_ADV_Train/label_cora.npy
-GCN_ADV_Train/run*.sh
 GCN_ADV_Train/rob_cora
 GCN_ADV_Train/bitcoin_data
 
@@ -13,3 +14,4 @@ Baselines/.vscode
 Baselines/data
 Baselines/results
 Baselines/*.npz
+Baselines/gpu_usage.sh

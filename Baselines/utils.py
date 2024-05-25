@@ -355,31 +355,6 @@ def Dyk_PGD_update(a, eps_count, eps_cost, node_cost, xi=1e-5, ub=1, delta=1e-3)
     print(f'Projection finished in {end_time - start_time} after {k} iterations')
     upper_S_update = np.clip(x_new, 0, ub)
     return upper_S_update
-        
-    
-# def bisection_dual(a, eps_count, eps_cost, c, xi=1e-5, ub=1):
-#     """modified PGD subject to both number of edge and total cost constrait"""
-#     pa = np.clip(a, 0, ub)
-#     if np.sum(c) <= eps_cost:                                           # if total cost constraint is not effective
-#         return bisection(a, eps_count, xi, ub)
-#     if (np.matmul(c, pa) <= eps_cost) and (np.sum(pa) <= eps_count):     # if both constraints are slack
-#         upper_S_update = pa
-#     if (np.matmul(c, pa) > eps_cost) and (np.sum(pa) <= eps_count):      # if only count constraint is slack, find lambda
-#         upper_S_update = bisection_cost(a, eps_cost, c, xi, ub)
-#     if (np.matmul(c, pa) <= eps_cost) and (np.sum(pa) > eps_count):      # if only total cost constraint is slack, find mu
-#         upper_S_update = bisection(a, eps_count, xi, ub)
-#     if (np.matmul(c, pa) > eps_cost) and (np.sum(pa) > eps_count):       # if both constraints are tight, 2-D bisection over lambda in [0, amin-1], mu in [0, (amin-1)/cmax]
-#         c_max = np.max(c[c!=0])
-#         mu_l, lam_l = 0, 0
-#         mu_u = np.min(a-1) / c_max
-#         lam_u = np.min(a-1)
-#         mu_a, lam_a = (mu_u + mu_l)/2, (lam_u + lam_l)/2
-#         while (np.abs(mu_u - mu_l) > xi) or (np.abs(lam_u - lam_l) > xi):
-            
-            
-            
-        
-    return upper_S_update
 
 def filter_potential_singletons(adj):
     """

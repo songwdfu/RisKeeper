@@ -1,7 +1,7 @@
 import os
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 import torch
-from DeepRobust.deeprobust.graph.defense import GCN, GCN_softmax, GCN_Median, GCNJaccard, GCNSVD, MedianGCN, GCNJaccard_directed
+from DeepRobust.deeprobust.graph.defense import GCN, GCN_Median, GCNJaccard, GCNSVD, MedianGCN, GCNJaccard_directed
 from preprocess_utils import drop_dissimilar_edges, truncatedSVD
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
@@ -26,10 +26,8 @@ torch.cuda.manual_seed(SEED)
 def clustering_coefficient(adj_matrix):
     # Convert the adjacency matrix to a NetworkX graph
     G = nx.from_numpy_matrix(adj_matrix)
-
     # Calculate the clustering coefficient for each node
     clustering_coefficients = nx.clustering(G)
-
     # Convert the dictionary to a NumPy array
     num_nodes = len(adj_matrix)
     cc_array = np.zeros(num_nodes)
@@ -44,7 +42,6 @@ def bisection_beta(x, total_costs):
     left = 0
     right = -np.log(total_costs/dim) / np.clip(x.min(), 1e-5, None) + 100
     beta = (left + right) / 2 
-    # while np.abs(f(beta)-total_costs) > 1e-8:
     while right-left > 1e-8:
         beta = (left + right) / 2 
         if (f(beta)-total_costs) * (f(left)-total_costs) > 0:
@@ -89,13 +86,11 @@ def test(new_adj, gcn=None, model_name=None):
     new_adj = new_adj.cpu().numpy()
     if gcn is None:
         # Poisoning setting
-        # adj = normalize_adj_tensor(adj)
         if args.model == 'GCNJaccard' or args.model == 'GCNJaccard_directed':
           gcn = model_name(attr.shape[1], 32, nclass, binary_feature=args.binary_feature, device=device)
         else:
           gcn = model_name(attr.shape[1], 32, nclass, device=device)
         gcn = gcn.to(device)
-        # gcn.fit(features, new_adj, labels, idx_train) # train without model picking
         gcn.fit(attr, new_adj, labels, train_indices, train_iters=400, verbose=False, idx_val=None) # train with validation model picking
         gcn.eval()
         output = gcn.predict(attr, new_adj).cpu()
@@ -104,10 +99,8 @@ def test(new_adj, gcn=None, model_name=None):
         gcn.eval()
         if args.model == 'GCNJaccard' or args.model == 'GCNJaccard_directed':
             modified_adj = drop_dissimilar_edges(attr, new_adj, undirected=undirected).toarray() # control Jaccard directed or not here
-            # _, modified_adj = to_tensor(attr, modified_adj, device=device)
         elif args.model == 'GCNSVD':
             modified_adj = truncatedSVD(new_adj)
-            # _, modified_adj = to_tensor(attr, modified_adj, device=device)
         else:
             modified_adj = new_adj
         output = gcn.predict(attr, modified_adj).cpu()
@@ -164,7 +157,6 @@ def test_median(adj, features, gcn=None, model_name=None):
 
 def process_pyg(features, adj, labels, idx_train, idx_val, idx_test):
     edge_index = torch.LongTensor(adj.nonzero()).T
-    # by default, the features in pyg data is dense
     if sp.issparse(features):
         x = torch.FloatTensor(features.todense()).float()
     else:
@@ -187,145 +179,92 @@ if __name__ == '__main__':
       parser.add_argument('--attack', type=str, default='MetaCost')
       parser.add_argument('--dataset', type=str, default='cora')
       parser.add_argument('--attack_loss_type', type=str, default='CE')
-      # parser.add_argument('--constraint_percentage', type=float, default=0.05)
       parser.add_argument('--perturb_ratio', type=float, default=0.05)
-      parser.add_argument('--cc', type=float, default=0.8)
+      parser.add_argument('--cost_constraint', type=float, default=0.8)
       parser.add_argument('--binary_feature', type=str, default='False')
       parser.add_argument('--cost_scheme', type=str, default='avg')
       parser.add_argument('--device', type=int, default=3)
+      parser.add_argument('--atk_epochs', type=int, default=200)
       parser.add_argument('--seed', type=int, default=123)
-      parser.add_argument('--hyper_c_ratio', type=float, default=11)
+      parser.add_argument('--hyper_c_ratio', type=float, default=0.4)
       args = parser.parse_args()
       args.binary_feature = True if args.binary_feature == 'True' else False
       
-      # try: 
-      #   result = pkl.load(open(f'results/meta_results_{args.model}_{args.attack}_{args.dataset}_{args.cost_scheme}_{args.perturb_ratio}_{args.cc}_{args.seed}_{args.hyper_c_ratio}.pkl', 'rb'))
-      #   exit_ = True
-      #   print('found result, exiting')
-      # except: 
-      #   exit_ = False
-      #   pass
-      # if exit_: raise SystemExit
+      try: 
+        result = pkl.load(open(f'results/meta_results_{args.model}_{args.attack}_{args.dataset}_{args.cost_scheme}_{args.perturb_ratio}_{args.cost_constraint}_{args.seed}_{args.hyper_c_ratio}.pkl', 'rb'))
+        exit_ = True
+        print('found result, exiting')
+      except: 
+        exit_ = False
+        pass
+      if exit_: raise SystemExit
       
       device = torch.device(f'cuda:{args.device}')
       
       if args.dataset == 'photo' or args.dataset == 'computers':
-          if args.dataset=='computers':
-              _A_obs, _X_obs, _z_obs = load_npz('amazon_electronics_computers.npz') # 13752 nodes, 767-dim node feature, 10 classes
-          if args.dataset=='photo':
-              _A_obs, _X_obs, _z_obs = load_npz('amazon_electronics_photo.npz')        
-          _A_obs = _A_obs + _A_obs.T
-          _A_obs[_A_obs > 1] = 1
-          c_adj=_A_obs.toarray()
-          c_adj=np.triu(c_adj,1)
-          _A_obs=c_adj+c_adj.T
-          adj=sp.coo_matrix(_A_obs).toarray()
-          attr=_X_obs.toarray()
-          labels = _z_obs
-          enc = OneHotEncoder()
-          _z_obs=np.expand_dims(_z_obs,1)
-          _z_obs=enc.fit_transform(_z_obs)
-          _z_obs=_z_obs.toarray()
-          labels_onehot = _z_obs
-          num_list=[i for i in range(adj.shape[0])]
-          np.random.shuffle(num_list)
-          new_y_train=np.zeros_like(_z_obs)
-          new_y_val=np.zeros_like(_z_obs)
-          new_y_test=np.zeros_like(_z_obs)
-          new_y_train[:int(0.1*len(num_list))] = _z_obs[num_list[:int(0.1*len(num_list))]]                                               # deviding train val test set 1:1:8, no shuffle
-          new_y_val[int(0.1*len(num_list)):int(0.2*len(num_list))] = _z_obs[num_list[int(0.1*len(num_list)):int(0.2*len(num_list))]]
-          new_y_test[int(0.2*len(num_list)):] = _z_obs[num_list[int(0.2*len(num_list)):]]
-          y_train=new_y_train
-          y_val=new_y_val
-          y_test=new_y_test
-          new_train_mask=np.zeros(adj.shape[0])
-          new_val_mask=np.zeros(adj.shape[0])
-          new_test_mask=np.zeros(adj.shape[0])
-          new_train_mask[num_list[:int(0.1*len(num_list))]]=1                                                                                    # corresponding masks
-          new_val_mask[num_list[int(0.1*len(num_list)):int(0.2*len(num_list))]]=1
-          new_test_mask[num_list[int(0.2*len(num_list)):]]=1
-          train_mask=new_train_mask.astype(bool)
-          val_mask=new_val_mask.astype(bool)
-          test_mask=new_test_mask.astype(bool)
-
-        #   train_indices = np.array(num_list[:int(0.1*len(num_list))])
-        #   val_indices = np.array(num_list[int(0.1*len(num_list)):int(0.2*len(num_list))])
-        #   test_indices = np.array(num_list[int(0.2*len(num_list)):])
-          train_indices = np.nonzero(train_mask)[0]
-          val_indices = np.nonzero(val_mask)[0]
-          test_indices = np.nonzero(test_mask)[0]
-
+        if args.dataset=='computers':
+            _A_obs, _X_obs, _z_obs = load_npz('amazon_electronics_computers.npz') # 13752 nodes, 767-dim node feature, 10 classes
+        if args.dataset=='photo':
+            _A_obs, _X_obs, _z_obs = load_npz('amazon_electronics_photo.npz')        
+        _A_obs = _A_obs + _A_obs.T
+        _A_obs[_A_obs > 1] = 1
+        c_adj=_A_obs.toarray()
+        c_adj=np.triu(c_adj,1)
+        _A_obs=c_adj+c_adj.T
+        adj=sp.coo_matrix(_A_obs).toarray()
+        attr=_X_obs.toarray()
+        labels = _z_obs
+        enc = OneHotEncoder()
+        _z_obs=np.expand_dims(_z_obs,1)
+        _z_obs=enc.fit_transform(_z_obs)
+        _z_obs=_z_obs.toarray()
+        labels_onehot = _z_obs
+        num_list=[i for i in range(adj.shape[0])]
+        np.random.shuffle(num_list)
+        new_y_train=np.zeros_like(_z_obs)
+        new_y_val=np.zeros_like(_z_obs)
+        new_y_test=np.zeros_like(_z_obs)
+        new_y_train[:int(0.1*len(num_list))] = _z_obs[num_list[:int(0.1*len(num_list))]]                                               # deviding train val test set 1:1:8, no shuffle
+        new_y_val[int(0.1*len(num_list)):int(0.2*len(num_list))] = _z_obs[num_list[int(0.1*len(num_list)):int(0.2*len(num_list))]]
+        new_y_test[int(0.2*len(num_list)):] = _z_obs[num_list[int(0.2*len(num_list)):]]
+        y_train=new_y_train
+        y_val=new_y_val
+        y_test=new_y_test
+        new_train_mask=np.zeros(adj.shape[0])
+        new_val_mask=np.zeros(adj.shape[0])
+        new_test_mask=np.zeros(adj.shape[0])
+        new_train_mask[num_list[:int(0.1*len(num_list))]]=1                                                                                    # corresponding masks
+        new_val_mask[num_list[int(0.1*len(num_list)):int(0.2*len(num_list))]]=1
+        new_test_mask[num_list[int(0.2*len(num_list)):]]=1
+        train_mask=new_train_mask.astype(bool)
+        val_mask=new_val_mask.astype(bool)
+        test_mask=new_test_mask.astype(bool)
+        train_indices = np.nonzero(train_mask)[0]
+        val_indices = np.nonzero(val_mask)[0]
+        test_indices = np.nonzero(test_mask)[0]
       
       if args.dataset == 'cora' or args.dataset == 'citeseer':
-        #   adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask = load_data(args.dataset)
-            adj, attr, labels_onehot, train_indices, val_indices, test_indices = load_data(args.dataset)
-            adj, attr = adj.toarray(), attr.toarray()
-            labels = np.argmax(labels_onehot, 1)
-      
-      if args.dataset == 'alpha' or args.dataset == 'otc':
-          # load data
-          adj, attr, labels = load_npz_raw(f"../GCN_ADV_Train/bitcoin_{args.dataset}_eigens.npz")
-          # set up train and test mask, indices, labels
-          train_mask = ~np.isnan(labels)
-          train_indices = np.nonzero(train_mask)[0]
-          np.random.shuffle(train_indices)
-          val_indices = train_indices[:len(train_indices)//2]                         # random selection
-          train_indices = train_indices[len(train_indices)//2:]
-          train_mask = np.zeros_like(train_mask)
-          val_mask = np.zeros_like(train_mask)
-          train_mask[train_indices] = 1                                               # get train and val masks
-          val_mask[val_indices] = 1                                               
-
-          new_y_train = labels[train_mask]                                                # get train and val labels (-1 and 1)
-          y_train = np.zeros([train_mask.shape[0], 2])
-          y_train[train_mask, 0] = (new_y_train == -1).astype(int)
-          y_train[train_mask, 1] = (new_y_train == 1).astype(int)
-
-          new_y_val = labels[val_mask]
-          y_val = np.zeros([train_mask.shape[0], 2])
-          y_val[val_mask, 0] = (new_y_val == -1).astype(int)
-          y_val[val_mask, 1] = (new_y_val == 1).astype(int)
-
-          test_mask = np.isnan(labels)
-          y_test = np.zeros([test_mask.shape[0], 2]).astype(int)
-
-          test_mask, val_mask = val_mask, test_mask                                   ###############
-          y_test, y_val = y_val, y_test  
-
-          new_y_train[new_y_train==-1] = 0
-          new_y_val[new_y_val==-1] = 0
-          y_test = new_y_val
-          y_train = new_y_train
-          test_indices = val_indices
-          val_indices = np.nonzero(val_mask)[0]
-
-          adj_matrix = adj.copy()
-          adj[adj!=0] = 1
-          attr.real
-          labels[labels==-1] = 0
+        adj, attr, labels_onehot, train_indices, val_indices, test_indices = load_data(args.dataset)
+        adj, attr = adj.toarray(), attr.toarray()
+        labels = np.argmax(labels_onehot, 1)
       
       nclass = labels.max()+1 if labels.max() > 1 else 2
       
       # build model
       if args.model == 'GCNJaccard':
-            model_name = GCNJaccard
-            undirected = True
-            # model = model_name(attr.shape[1], 32, 2, device=device,binary_feature=args.binary_feature) # modified: False
+        model_name = GCNJaccard
+        undirected = True
       if args.model == 'GCNJaccard_directed':
-            model_name = GCNJaccard_directed
-            undirected = False
+        model_name = GCNJaccard_directed
+        undirected = False
       if args.model == 'GCN':
-            # model_name = GCN
-            model_name = GCN
-            # model = model_name(attr.shape[1], 32, 2, device=device)
+        model_name = GCN
       if args.model == 'GCNSVD':
-            model_name = GCNSVD
-            # model = model_name(attr.shape[1], 32, 2, device=device)
+        model_name = GCNSVD
       if args.model == 'MedianGCN':
-            model_name = MedianGCN
-            # model = model_name(attr.shape[1], 32, 2, device=device)
+        model_name = MedianGCN
       
-      SEED = args.seed # 123
+      SEED = args.seed
       np.random.seed(SEED) 
       torch.manual_seed(SEED) 
       torch.cuda.manual_seed(SEED)
@@ -333,10 +272,9 @@ if __name__ == '__main__':
       model = GCN(attr.shape[1], 32, nclass, device=device)
       model = model.to(device)
       if args.dataset == 'alpha' or args.dataset == 'otc':
-         model.fit(features=attr, adj=adj, labels=labels, idx_train=train_indices, train_iters=400, verbose=True, idx_val=None) # vals
+        model.fit(features=attr, adj=adj, labels=labels, idx_train=train_indices, train_iters=400, verbose=True, idx_val=None)
       else:
-        # model.fit(features=attr, adj=adj, labels=labels, idx_train=train_indices, train_iters=400, verbose=True, idx_val=val_indices, patience=20) # val # tmp debug
-        model.fit(features=attr, adj=adj, labels=labels, idx_train=train_indices, train_iters=400, verbose=True, idx_val=val_indices, patience=50) # vals
+        model.fit(features=attr, adj=adj, labels=labels, idx_train=train_indices, train_iters=400, verbose=True, idx_val=val_indices, patience=50)
       
       # test on clean graph
       model.eval()
@@ -344,41 +282,34 @@ if __name__ == '__main__':
       new_pred = model.predict(attr, adj)
       # save predicted pseudo labels
       new_pred = torch.argmax(new_pred, 1).cpu()
-    #   pkl.dump(new_pred.numpy(), open(f'pred_{args.model}_{args.dataset}.pkl', 'wb'))
       
       # Setup Attack Model
       print('=== setup attack model ===')
       if args.attack == 'PGDAttack':
-          atk_name = PGDAttack
-          atk_model = atk_name(model=model, nnodes=adj.shape[0], loss_type=args.attack_loss_type, device=device)
+        atk_name = PGDAttack
+        atk_model = atk_name(model=model, nnodes=adj.shape[0], loss_type=args.attack_loss_type, device=device)
       if args.attack == 'PGDCost':
-          atk_name = PGDAttack
-          atk_model = atk_name(model=model, nnodes=adj.shape[0], loss_type=args.attack_loss_type, device=device)
+        atk_name = PGDAttack
+        atk_model = atk_name(model=model, nnodes=adj.shape[0], loss_type=args.attack_loss_type, device=device)
       if args.attack == 'MinMax':
-          atk_name = MinMax
-          atk_model = atk_name(model=model, nnodes=adj.shape[0], loss_type=args.attack_loss_type, device=device)
+        atk_name = MinMax
+        atk_model = atk_name(model=model, nnodes=adj.shape[0], loss_type=args.attack_loss_type, device=device)
       if args.attack == 'Metattack':
-          atk_name = Metattack
-          atk_model = atk_name(model=model, nnodes=adj.shape[0], device=device, undirected=True, lambda_=0.5)
+        atk_name = Metattack
+        atk_model = atk_name(model=model, nnodes=adj.shape[0], device=device, undirected=True, lambda_=0.5)
       if args.attack == 'MetaCost':
-          atk_name = Metattack
-          atk_model = atk_name(model=model, nnodes=adj.shape[0], device=device, undirected=True, lambda_=0.5)
+        atk_name = Metattack
+        atk_model = atk_name(model=model, nnodes=adj.shape[0], device=device, undirected=True, lambda_=0.5)
 
       atk_model = atk_model.to(device)
 
-      atk_epochs = 200 # 250
-    
-
-    #   # old setting, cost_constraint is related with |E|
+      atk_epochs = args.atk_epochs
       
-    #   new setting, cost_constraint is related with sum(cost)
-      # cost_constraint = args.constraint_percentage * 100
       ptb_rate = args.perturb_ratio
       perturbations = int(ptb_rate * (adj.sum())//2)
       perturbations = int(ptb_rate * (adj.shape[0]//2))
-      # hyper_c = 0.001*253.45/perturbations
       hyper_c = 253.45/perturbations * args.hyper_c_ratio
-      cost_constraint = perturbations * args.cc * 2
+      cost_constraint = perturbations * args.cost_constraint * 2
       
       features = torch.from_numpy(attr)
       adj_tensor = torch.from_numpy(adj)
@@ -389,14 +320,9 @@ if __name__ == '__main__':
       # Besides, we need to add the idx into the whole process
       pseudo_indices = np.concatenate([train_indices, test_indices])
 
-
-      # node_costs = pkl.load(open(f'/data/wenda/GCN_ADV_Train/node_costs_new/node_costs_{args.dataset}_{args.constraint_percentage}.pkl', 'rb'))
-      # node_costs = pkl.load(open(f'/data/wenda/GCN_ADV_Train/bitcoin_data/node_costs_{args.dataset}_{args.perturb_ratio}_cc{args.cc}_{args.seed}.pkl', 'rb'))
-      
-      # This one: 
-      # node_costs = pkl.load(open(f'/data/wenda/GCN_ADV_Train/bitcoin_data/node_costs_{args.dataset}_{args.perturb_ratio}_cc0.8_{args.seed}.pkl', 'rb'))
-      node_costs = pkl.load(open(f'/data/wenda/GCN_ADV_Train/bitcoin_data/node_costs_{args.dataset}_{args.perturb_ratio}_cc{args.cc}_{args.seed}_{args.hyper_c_ratio}.pkl', 'rb'))
-      # node_costs = pkl.load(open(f'/data/wenda/GCN_ADV_Train/node_costs_new/node_costs_cora_0.05_75.pkl', 'rb'))
+      if not os.path.exists(f'../GCN_ADV_Train/node_costs/node_costs_{args.dataset}_{args.perturb_ratio}_cc{args.cost_constraint}_{args.seed}_{args.hyper_c_ratio}.pkl'):
+        raise FileNotFoundError(f'../GCN_ADV_Train/node_costs/node_costs_{args.dataset}_{args.perturb_ratio}_cc{args.cost_constraint}_{args.seed}_{args.hyper_c_ratio}.pkl' + 'Please run ../GCN_ADV_Train/adv_train_pgd_cost_constraint.py first.')
+      node_costs = pkl.load(open(f'../GCN_ADV_Train/node_costs/node_costs_{args.dataset}_{args.perturb_ratio}_cc{args.cost_constraint}_{args.seed}_{args.hyper_c_ratio}.pkl', 'rb'))
       
       mean_node_cost = node_costs.mean()
       node_costs_original = node_costs
@@ -443,33 +369,26 @@ if __name__ == '__main__':
         node_costs[node_costs < 1e-5] = 0
       elif args.cost_scheme == 'ours':
         pass
-      else: raise ValueError('Cost Scheme Not Implemented')
+      else: raise NotImplementedError('Cost scheme not implemented, please check your spelling.')
       
-      # use ours or average
-    #   node_costs = mean_node_cost * np.ones_like(node_costs)
       total_defense_cost = node_costs.sum()
     
       print(f'total node cost: {total_defense_cost}')
       
-      if args.attack == 'MetaCost':
-        # atk_model.attack(attr, adj, pseudo_labels.numpy(), pseudo_indices, val_indices, perturbations)  
+      if args.attack == 'MetaCost': 
         atk_model.attack(attr, adj, labels, train_indices, np.union1d(val_indices, test_indices), cost_constraint, node_costs, hyper_c, ll_constraint=False)  
         
-      if args.attack == 'PGDCost': # PGD attack with cost
-        # output, loss, acc, adj_norm = atk_model.attack_cost(attr, adj, pseudo_labels.numpy(), pseudo_indices, cost_constraint, total_defense_cost, epochs=atk_epochs, hyper_c=hyper_c) # attack GCN
-        output, loss, acc, adj_norm = atk_model.attack_cost(attr, adj, pseudo_labels.numpy(), pseudo_indices, cost_constraint, node_costs, epochs=atk_epochs, hyper_c=hyper_c) # attack GCN
+      if args.attack == 'PGDCost':
+        raise NotImplementedError('For cost-aware PGD attack, please use GCN_baseline_pgd_cost.py')
         
         
       result = dict()
-      print(f'results for {args.dataset}, {args.model}, {args.cost_scheme}, {args.perturb_ratio}, {args.cc}, {args.seed}')
+      print(f'results for {args.dataset}, {args.model}, {args.cost_scheme}, {args.perturb_ratio}, {args.cost_constraint}, {args.seed}')
       
       print('=== testing GCN on clean graph ===')
       clean_acc, clean_auc = test(torch.tensor(adj), gcn=model, model_name=None)
       
       modified_adj = atk_model.modified_adj
-      # pkl.dump(modified_adj.cpu().numpy(), open(f'meta_modified_adjs/{args.dataset}_{args.perturb_ratio}.pkl', 'wb'))
-    #   modified_adj = pkl.load(open('modified_adj_otc_015.pkl','rb'))
-    #   modified_adj = torch.from_numpy(modified_adj[0])
       
       print('=== testing GCN on Evasion attack ===')
       if args.model=='MedianGCN':
@@ -490,6 +409,6 @@ if __name__ == '__main__':
       result['poisoning_acc'] = poisoning_acc
       result['poisoning_auc'] = poisoning_auc
       
-      # pkl.dump(result, open(f'results/meta_results_{args.model}_{args.attack}_{args.dataset}_{args.cost_scheme}_{args.perturb_ratio}_{args.cc}_{args.seed}.pkl', 'wb'))
-      
-      pkl.dump(result, open(f'results/meta_results_{args.model}_{args.attack}_{args.dataset}_{args.cost_scheme}_{args.perturb_ratio}_{args.cc}_{args.seed}_{args.hyper_c_ratio}.pkl', 'wb'))
+      if not os.path.exists('results/'):
+        os.makedirs('results/')
+      pkl.dump(result, open(f'results/meta_results_{args.model}_{args.attack}_{args.dataset}_{args.cost_scheme}_{args.perturb_ratio}_{args.cost_constraint}_{args.seed}_{args.hyper_c_ratio}.pkl', 'wb'))
