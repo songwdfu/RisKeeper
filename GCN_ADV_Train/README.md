@@ -21,7 +21,7 @@ $ tar -xzvf riskeeper_data.tar.gz
 ```
 
 ### Current Experiments
-The current version: run `adv_train_pgd_cost_constraint.py` for cost learning and evasion testing, `poisoning_pgd_cost_constraint.py` for poisoning testing (using saved learned costs)
+Current experiments: run `adv_train_pgd_cost_constraint.py` for cost learning and evasion testing, `poisoning_pgd_cost_constraint.py` for poisoning testing (using saved learned costs)
 
 see args defined in FLAGS, `perturb_ratio` and `cost_constraint` essentially works together, see calculation of variable `eps_cost`. The reported setting use `cost_constraint` $0.8$ and `perturb_ratio` $0.05, 0.10, 0.15$. The `hyper_c_ratio` is for changing the hyper parameter $\lambda$ to `hyper_c_ratio  * 253.45 / eps`. Set `discrete` to `True` to obtain discrete modified adj matrix after training finished.
 

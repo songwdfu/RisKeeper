@@ -151,3 +151,73 @@ def construct_feed_dict(features, support, labels, labels_mask, placeholders, tr
         feed_dict.update({placeholders['support'][i]: support[i] for i in range(len(support))}) # if attack: do not feed in support
     feed_dict.update({placeholders['num_features_nonzero']: features[1].shape})
     return feed_dict
+
+def bisection(a,eps,xi=1e-5,ub=1):
+    #mu=(np.sum(a)-eps)/(a.shape[1]*(a.shape[1]-1)/2)
+    #upper_S_update = a - mu
+    pa = np.clip(a, 0, ub)
+    slack = False
+    if np.sum(pa) <= eps:                                               # if 1'P(a) < eps, mu = 0
+        # print('np.sum(pa) <= eps !!!!')
+        slack = True
+        upper_S_update = pa
+    else:                                                               # if 1'P(a - mu 1) = eps, mu > 0 (a exceeding constraint)
+        mu_l = np.min(a-1)                                              # bisection from min(a) - 1 to max(a)
+        mu_u = np.max(a)
+        mu_a = (mu_u + mu_l)/2
+        while np.abs(mu_u - mu_l)>xi:
+            #print('|mu_u - mu_l|:',np.abs(mu_u - mu_l))
+            mu_a = (mu_u + mu_l)/2
+            gu = np.sum(np.clip(a-mu_a, 0, ub)) - eps
+            gu_l = np.sum(np.clip(a-mu_l, 0, ub)) - eps
+            #print('gu:',gu)
+            if gu == 0:
+                print('gu == 0 !!!!!')
+                break
+            if np.sign(gu) == np.sign(gu_l):
+                mu_l = mu_a
+            else:
+                mu_u = mu_a
+        upper_S_update = np.clip(a-mu_a, 0, ub)                         # return s = PI(a)
+
+    return upper_S_update, slack
+
+def bisection_cost(a, eps, c, xi=1e-8, ub=1):
+    """
+    modified PGD subject to total attack cost constraint
+    c is the node cost vector with shape (number_of_nodes, )
+    """
+    shape = a.shape
+    c = (c + c.T).ravel()
+    a = a.ravel()
+    pa = np.clip(a, 0, ub)
+    slack = False
+    if np.sum(c) <= eps:
+        upper_S_update = pa                                              # cost constraint not effective
+        slack = True
+    elif np.matmul(c, pa) <= eps:
+        upper_S_update = pa                                              # if c'P(a) < eps, mu=0
+        slack = True
+    else:
+        c_nonzero = c[c!=0]                                              # if c'P(a - mu*c) = eps, mu>0
+        mu_l = np.min(a-1) / np.max(c_nonzero)                           # bisection over mu \in [(amin-1) / cmax, amax / cmin]
+        mu_u = np.max(a) / np.min(c_nonzero)
+        mu_a = (mu_u + mu_l)/2
+        while np.abs(mu_u - mu_l)>xi:
+            # print('|mu_u - mu_l|:',np.abs(mu_u - mu_l))
+            mu_a = (mu_u + mu_l)/2
+            gu = np.matmul(c, (np.clip(a-mu_a*c, 0, ub))) - eps
+            gu_l = np.matmul(c, (np.clip(a-mu_l*c, 0, ub))) - eps
+            #print('gu:',gu)
+            if gu == 0:
+                print('gu == 0 !!!!!')
+                break
+            if np.sign(gu) == np.sign(gu_l):
+                mu_l = mu_a
+            else:
+                mu_u = mu_a
+        upper_S_update = np.clip(a - mu_a*c, 0, ub)
+    print(f'now_cost:{np.matmul(c, upper_S_update)}, constraint: {eps}')
+    upper_S_update = upper_S_update.reshape(shape)
+    
+    return upper_S_update, slack
