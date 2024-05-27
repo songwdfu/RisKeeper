@@ -25,13 +25,7 @@ Current experiments: run `adv_train_pgd_cost_constraint.py` for cost learning an
 
 see args defined in FLAGS, `perturb_ratio` and `cost_constraint` essentially works together, see calculation of variable `eps_cost`. The reported setting use `cost_constraint` $0.8$ and `perturb_ratio` $0.05, 0.10, 0.15$. The `hyper_c_ratio` is for changing the hyper parameter $\lambda$ to `hyper_c_ratio  * 253.45 / eps`. Set `discrete` to `True` to obtain discrete modified adj matrix after training finished.
 
-To run all current experiment for adversarial training of RisKeeper, run:
-```
-$ cd GCN_ADV_Train/
-$ bash run_datasets.sh
-```
-
-To run adversarial training with certain args under evasion setting, for example, run:
+To run adversarial training of RisKeeper with certain args under evasion setting, for example, run:
 ```
 $ cd GCN_ADV_Train/
 $ python adv_train_pgd_cost_constraint.py --dataset cora --perturb_ratio 0.05 --cost_constraint 0.8 --discrete True
@@ -55,10 +49,10 @@ By the end of the adversarial training, `now_s` and `now_node_costs` are final a
 ## Baselines & Transferring to Meta Attack
 The baseline models `GCN, GCNJaccard, GCNSVD, MedianGCN` are implemented with pytorch under `../Baselines/` utilizing `DeepRobust` repo, see [`../Baselines/README.md`](../Baselines/README.md) for details. Notice that the source codes are highly modified on top of the original repo. 
 
-For running experiments for transfering onto Meta attack, please first run:
+For running experiments for transfering onto Meta attack, please first obtain costs of RisKeeper with desired arguments, for example:
 ```
 $ cd GCN_ADV_Train/
-$ bash run_meta_pre.sh
+$ python adv_train_pgd_cost_constraint.py --dataset cora --perturb_ratio 0.05 --hyper_c_ratio 0.4 --cost_constraint 0.2 --discrete True
 ```
 
 Then head to `../Baselines/` and read the [`README.md`](../Baselines/README.md) file for instructions.
