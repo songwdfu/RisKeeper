@@ -16,7 +16,7 @@ import torch.nn.functional as F
 import pandas as pd
 import pickle as pkl
 import argparse
-from utils import load_data, preprocess_features, preprocess_adj, construct_feed_dict
+from utils import load_data
 
 
 def clustering_coefficient(adj_matrix):
