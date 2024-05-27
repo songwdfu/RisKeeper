@@ -79,7 +79,7 @@ $ python GCN_baseline_meta_cost.py --model GCNJaccard --attack MetaCost --pertur
 ```
 
 ## Acknowledgements
-Part of this code is built on "DeepRobust": https://github.com/DSE-MSU/DeepRobust, and "GCN_ADV_Train": https://github.com/KaidiXu/GCN_ADV_Train repositories.
+Part of this code is built on ["DeepRobust"](https://github.com/DSE-MSU/DeepRobust), and ["GCN_ADV_Train"](https://github.com/KaidiXu/GCN_ADV_Train) repositories.
 
 ## Cite 
 If you find this work helpful, please cite:
